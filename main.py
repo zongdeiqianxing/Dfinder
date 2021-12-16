@@ -65,7 +65,7 @@ class Zoomeye:
 
                 if line:
                     if line[0].startswith('total'):
-                        if line[1] and int(int(line[1].split('/')[1])/int(line[1].split('/')[0]))+1 == i:
+                        if line[1] and int(line[1].split('/')[1]) <= int(line[1].split('/')[0]):
                             print('zoomeye scan over')
                             return
                     else:
