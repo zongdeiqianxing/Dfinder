@@ -7,12 +7,15 @@ import argparse
 import itertools
 
 
+API_KEY = '3E2A727A-7498-41E64-dC29-dDD1013c51a' # API-KEY FROM https://www.zoomeye.org/profile
+
+
 class ArgParse:
     def parse(self):
         parser = argparse.ArgumentParser(description='By zongdeiqianxing; Email: jshahjk@163.com')
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-d', action="store", dest="domain",)
-        group.add_argument('-f', action="store", dest="file", type=str)
+        group.add_argument('-f', action="store", dest="file",)
         parser.add_argument('-o', action="store", dest="output", type=str, help='txt file', default='')
         args = parser.parse_args()
         return args
@@ -43,7 +46,7 @@ class DownTools:
             for key in self.tools.keys():
                 if file.lower().startswith(key) and file != key:
                     os.system('mv {} {}'.format(file, key))
-
+        os.chdir('../')
 
 # oneforall  Zoonmeye  cduan
 class Zoomeye:
@@ -53,8 +56,12 @@ class Zoomeye:
 
     def run(self):
         for i in itertools.count(1, 1):
-            r = os.popen('python3 zoomeye/zoomeye/cli.py domain -page {p} {d} 1'.format(p=i, d=self.target)).read()
+            r = os.popen('python3 tools/zoomeye/zoomeye/cli.py domain -page {p} {d} 1'.format(p=i, d=self.target)).read()
             # print(r)
+            if r"please run 'zoomeye init -apikey <api key>'" in r:
+                os.system('pip3 install zoomeye')
+                os.system('zoomeye init -apikey "{}"'.format(API_KEY))
+
             for line in r.splitlines():
                 line = re.sub('\x1b.*?m', '', line)
                 line = [_ for _ in line.split(' ') if _]
@@ -65,7 +72,7 @@ class Zoomeye:
 
                 if line:
                     if line[0].startswith('total'):
-                        if line[1] and int(line[1].split('/')[1]) <= int(line[1].split('/')[0]):
+                        if line[1] and int(int(line[1].split('/')[1])/int(line[1].split('/')[0]))+1 == i:
                             print('zoomeye scan over')
                             return
                     else:
@@ -79,8 +86,8 @@ class Oneforall:
         self.domains = []
 
     def run(self):
-        comm = "python3 oneforall/oneforall.py --target {domain} run".format(domain=self.target)
-        logfile = 'oneforall/results/{domain}.csv'.format(domain=self.target)
+        comm = "python3 tools/oneforall/oneforall.py --target {domain} run".format(domain=self.target)
+        logfile = 'tools/oneforall/results/{domain}.csv'.format(domain=self.target)
         os.system(comm)
         if os.path.exists(logfile):
             try:
@@ -103,7 +110,7 @@ class Controller:
         if self.args.file:
             with open(self.args.file, 'r', encoding='utf-8') as f:
                 for line in f.readlines():
-                    self.run(line)
+                    self.run(line.strip())
 
     def run(self, domain):
         oneforall = Oneforall(domain)
@@ -114,7 +121,6 @@ class Controller:
 
     def output(self, file, domains):
         file = self.args.output if self.args.output else '{}.txt'.format(file.strip())
-        os.chdir('../')
         with open(file, 'w', encoding='utf-8') as f:
             for _ in domains:
                 f.write(_)
@@ -122,5 +128,7 @@ class Controller:
 
 
 if __name__ == '__main__':
+    if not API_KEY:
+        exit('需要输入zoomeye的api_key')
     DownTools()
     Controller()
