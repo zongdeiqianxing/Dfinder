@@ -7,7 +7,7 @@ import argparse
 import itertools
 
 
-API_KEY = '3E2A727A-7498-41E64-dC29-dDD1013c51a' # API-KEY FROM https://www.zoomeye.org/profile
+API_KEY = '1' # API-KEY FROM https://www.zoomeye.org/profile
 
 
 class ArgParse:
