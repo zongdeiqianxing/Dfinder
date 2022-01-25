@@ -7,7 +7,7 @@ import argparse
 import itertools
 
 
-API_KEY = '1' # API-KEY FROM https://www.zoomeye.org/profile
+API_KEY = '' # API-KEY FROM https://www.zoomeye.org/profile
 
 
 class ArgParse:
@@ -100,10 +100,31 @@ class Oneforall:
                 print(e)
 
 
+def ipscan(domain):
+    # IBM 阿里云 中国互联网络信息中心
+    dns = ['9.9.9.9', '223.5.5.5', '1.2.4.8']
+    _ = []
+    for _dns in dns:
+        r = os.popen('nslookup {t} {d}'.format(t=domain, d=_dns)).read()
+        r = r.split('\n')[4:]
+        _.append(r)
+
+    # print(_)
+    if _[0] == _[1] == _[2]:
+        ip = re.search(r'(([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])\.){3}([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])',''.join(_[0]))
+        print(ip)
+        if ip:
+            return ip.group()
+    else:
+        print('{}存在cdn或多ip'.format(domain))
+        return None
+
+
 class Controller:
     def __init__(self):
         self.args = ArgParse().parse()
         self.data = []
+        self.domainsDict = {}
 
         if self.args.domain:
             self.run(self.args.domain)
@@ -117,18 +138,29 @@ class Controller:
         zoomeye = Zoomeye(domain)
         zoomeye.run()
         oneforall.run()
-        self.output(domain, list(set(zoomeye.domains + oneforall.domains)))
 
-    def output(self, file, domains):
+        # 保持zoomeye独有的doamins在上面
+        D = []
+        for d in zoomeye.domains:
+            if d not in oneforall.domains:
+                D.append(d)
+        D += oneforall.domains
+
+        for d in D:
+            self.domainsDict[d] = ipscan(d)
+
+        self.output(domain, self.domainsDict)
+
+    def output(self, file, domainsDict):
         file = self.args.output if self.args.output else '{}.txt'.format(file.strip())
         with open(file, 'w', encoding='utf-8') as f:
-            for _ in domains:
-                f.write(_)
+            for k, v in domainsDict.items():
+                f.write('{}\t{}'.format(k, v))
                 f.write('\n')
 
 
 if __name__ == '__main__':
-    if not API_KEY:
+    if not API_KEY :
         exit('需要输入zoomeye的api_key')
     DownTools()
     Controller()
